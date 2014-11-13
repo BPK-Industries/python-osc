@@ -38,28 +38,24 @@ class OscBundle(object):
   def _parse_contents(self, index):
     contents = []
 
-    try:
-      # An OSC Bundle Element consists of its size and its contents.
-      # The size is an int32 representing the number of 8-bit bytes in the
-      # contents, and will always be a multiple of 4. The contents are either
-      # an OSC Message or an OSC Bundle.
-      while self._dgram[index:]:
-        # Get the sub content size.
-        content_size, index = osc_types.get_int(self._dgram, index)
-        # Get the datagram for the sub content.
-        content_dgram = self._dgram[index:index + content_size]
-        # Increment our position index up to the next possible content.
-        index += content_size
-        # Parse the content into an OSC message or bundle.
-        if OscBundle.dgram_is_bundle(content_dgram):
-          contents.append(OscBundle(content_dgram))
-        elif osc_message.OscMessage.dgram_is_message(content_dgram):
-          contents.append(osc_message.OscMessage(content_dgram))
-        else:
-          logging.warning(
-              "Could not identify content type of dgram %s" % content_dgram)
-    except (osc_types.ParseError, osc_message.ParseError, IndexError) as e:
-      raise ParseError("Could not parse a content datagram: %s" % e)
+    # An OSC Bundle Element consists of its size and its contents.
+    # The size is an int32 representing the number of 8-bit bytes in the
+    # contents, and will always be a multiple of 4. The contents are either
+    # an OSC Message or an OSC Bundle.
+    while self._dgram[index:]:
+      # Get the sub content size.
+      content_size, index = osc_types.get_int(self._dgram, index)
+      # Get the datagram for the sub content.
+      content_dgram = self._dgram[index:index + content_size]
+      # Increment our position index up to the next possible content.
+      index += content_size
+      # Parse the content into an OSC message or bundle.
+      if OscBundle.dgram_is_bundle(content_dgram):
+        contents.append(OscBundle(content_dgram))
+      elif osc_message.OscMessage.dgram_is_message(content_dgram):
+        contents.append(osc_message.OscMessage(content_dgram))
+      else:
+        logging.warning("Could not identify content type of dgram %s" % content_dgram)
 
     return contents
 

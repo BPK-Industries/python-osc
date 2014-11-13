@@ -60,6 +60,8 @@ class _UDPHandler(socketserver.BaseRequestHandler):
   """
   def handle(self):
     data = self.request[0]
+
+    ka = {'client': self.client_address[0]}
     # Get OSC messages from all bundles or standalone message.
     try:
       packet = osc_packet.OscPacket(data)
@@ -72,12 +74,13 @@ class _UDPHandler(socketserver.BaseRequestHandler):
         # If the message is to be handled later, then so be it.
         if timed_msg.time > now:
           time.sleep(timed_msg.time - now)
+        ka['address'] = timed_msg.message.address
+        ka['timestamp'] = timed_msg.time
         for handler in handlers:
           if handler.args:
-            handler.callback(
-                timed_msg.message.address, handler.args, *timed_msg.message)
+            handler.callback(handler.args, *timed_msg.message, **ka)
           else:
-            handler.callback(timed_msg.message.address, *timed_msg.message)
+            handler.callback(*timed_msg.message, **ka)
     except osc_packet.ParseError as err:
       logging.exception(err)
 

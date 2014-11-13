@@ -4,6 +4,9 @@ python-osc
 
 Open Sound Control server and client implementations in **pure python** (3.3+).
 
+.. image:: https://travis-ci.org/attwad/python-osc.svg?branch=master
+    :target: https://travis-ci.org/attwad/python-osc
+
 Current status
 ==============
 
@@ -112,3 +115,7 @@ Simple server
         (args.ip, args.port), dispatcher)
     print("Serving on {}".format(server.server_address))
     server.serve_forever()
+
+License?
+========
+WTFPL (http://www.wtfpl.net)
