@@ -4,7 +4,7 @@ try:
     import builtins
 except ImportError:
     # for python 2.x
-    import __builtin__ as builtins
+    builtins = __builtins__
 
 from pythonosc import osc_message
 from pythonosc.parsing import osc_types

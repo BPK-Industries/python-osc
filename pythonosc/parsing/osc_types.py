@@ -61,7 +61,7 @@ def get_string(dgram, start_index):
   """
   offset = 0
   try:
-    while dgram[start_index + offset] != b'\x00':
+    while dgram[start_index + offset] != 0:
       offset += 1
     if offset == 0:
       raise ParseError(
@@ -95,7 +95,7 @@ def write_int(val):
     raise BuildError('Wrong argument value passed: {}'.format(e))
 
 
-def get_int(dgram, start_index, unsigned=False):
+def get_int(dgram, start_index):
   """Get a 32-bit big-endian two's complement integer from the datagram.
 
   Args:
@@ -112,7 +112,7 @@ def get_int(dgram, start_index, unsigned=False):
     if len(dgram[start_index:]) < _INT_DGRAM_LEN:
       raise ParseError('Datagram is too short')
     return (
-        struct.unpack('>I' if unsigned else '>i',
+        struct.unpack('>i',
                       dgram[start_index:start_index + _INT_DGRAM_LEN])[0],
         start_index + _INT_DGRAM_LEN)
   except (struct.error, TypeError) as e:
@@ -221,18 +221,13 @@ def get_date(dgram, start_index):
   """
   # Check for the special case first.
   if dgram[start_index:start_index + _DATE_DGRAM_LEN] == ntp.IMMEDIATELY:
-    print (IMMEDIATELY)
     return IMMEDIATELY, start_index + _DATE_DGRAM_LEN
   if len(dgram[start_index:]) < _DATE_DGRAM_LEN:
     raise ParseError('Datagram is too short')
-
-  num_secs, start_index = get_int(dgram, start_index, unsigned=True)
-  fraction, start_index = get_int(dgram, start_index, unsigned=True)
-
-  dec = decimal.Decimal(num_secs) + decimal.Decimal(fraction) / decimal.Decimal(2**32-1)
-
+  num_secs, start_index = get_int(dgram, start_index)
+  fraction, start_index = get_int(dgram, start_index)
   # Get a decimal representation from those two values.
-  #dec = decimal.Decimal(str(num_secs) + '.' + str(fraction))
+  dec = decimal.Decimal(str(num_secs) + '.' + str(fraction))
   # And convert it to float simply.
   system_time = float(dec)
   return ntp.ntp_to_system_time(system_time), start_index

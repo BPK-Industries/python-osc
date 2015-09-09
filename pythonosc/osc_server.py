@@ -11,7 +11,7 @@ server.serve_forever()
 or run the server on its own thread:
 server = ForkingOSCUDPServer((ip, port), dispatcher)
 server_thread = threading.Thread(target=server.serve_forever)
-server_thread.start()
+server_thread.Start()
 ...
 server.shutdown()
 
@@ -21,18 +21,12 @@ http://docs.python.org/library/socketserver.html
 """
 
 import calendar
-import logging
+import socketserver
 import time
-
-try:
-  import socketserver
-except ImportError:
-  import SocketServer as socketserver
 
 from pythonosc import osc_bundle
 from pythonosc import osc_message
 from pythonosc import osc_packet
-
 
 
 class _UDPHandler(socketserver.BaseRequestHandler):
@@ -59,9 +53,7 @@ class _UDPHandler(socketserver.BaseRequestHandler):
             osc_msg_arg1, osc_msg_arg2, osc_msg_param3, ...)
   """
   def handle(self):
-    data = self.request[0]
-
-    ka = {'client': self.client_address[0]}
+    data = self.request[0].strip()
     # Get OSC messages from all bundles or standalone message.
     try:
       packet = osc_packet.OscPacket(data)
@@ -74,15 +66,14 @@ class _UDPHandler(socketserver.BaseRequestHandler):
         # If the message is to be handled later, then so be it.
         if timed_msg.time > now:
           time.sleep(timed_msg.time - now)
-        ka['address'] = timed_msg.message.address
-        ka['timestamp'] = timed_msg.time
         for handler in handlers:
           if handler.args:
-            handler.callback(handler.args, *timed_msg.message, **ka)
+            handler.callback(
+                timed_msg.message.address, handler.args, *timed_msg.message)
           else:
-            handler.callback(*timed_msg.message, **ka)
-    except osc_packet.ParseError as err:
-      logging.exception(err)
+            handler.callback(timed_msg.message.address, *timed_msg.message)
+    except osc_packet.ParseError:
+      pass
 
 
 def _is_valid_request(request):
@@ -93,7 +84,7 @@ def _is_valid_request(request):
       or osc_message.OscMessage.dgram_is_message(data))
 
 
-class BlockingOSCUDPServer(socketserver.UDPServer, object):
+class BlockingOSCUDPServer(socketserver.UDPServer):
   """Blocking version of the UDP server.
 
   Each message will be handled sequentially on the same thread.
@@ -102,7 +93,7 @@ class BlockingOSCUDPServer(socketserver.UDPServer, object):
   """
 
   def __init__(self, server_address, dispatcher):
-    super(BlockingOSCUDPServer, self).__init__(server_address, _UDPHandler)
+    super().__init__(server_address, _UDPHandler)
     self._dispatcher = dispatcher
 
   def verify_request(self, request, client_address):
@@ -116,7 +107,7 @@ class BlockingOSCUDPServer(socketserver.UDPServer, object):
 
 
 class ThreadingOSCUDPServer(
-    socketserver.ThreadingMixIn, socketserver.UDPServer, object):
+    socketserver.ThreadingMixIn, socketserver.UDPServer):
   """Threading version of the OSC UDP server.
 
   Each message will be handled in its own new thread.
@@ -124,7 +115,7 @@ class ThreadingOSCUDPServer(
   """
 
   def __init__(self, server_address, dispatcher):
-    super(ThreadingOSCUDPServer, self).__init__(server_address, _UDPHandler)
+    super().__init__(server_address, _UDPHandler)
     self._dispatcher = dispatcher
 
   def verify_request(self, request, client_address):
@@ -138,7 +129,7 @@ class ThreadingOSCUDPServer(
 
 
 class ForkingOSCUDPServer(
-    socketserver.ForkingMixIn, socketserver.UDPServer, object):
+    socketserver.ForkingMixIn, socketserver.UDPServer):
   """Forking version of the OSC UDP server.
 
   Each message will be handled in its own new process.
@@ -147,7 +138,7 @@ class ForkingOSCUDPServer(
   """
 
   def __init__(self, server_address, dispatcher):
-    super(ForkingOSCUDPServer, self).__init__(server_address, _UDPHandler)
+    super().__init__(server_address, _UDPHandler)
     self._dispatcher = dispatcher
 
   def verify_request(self, request, client_address):
