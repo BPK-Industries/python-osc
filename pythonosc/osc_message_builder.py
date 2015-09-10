@@ -1,10 +1,10 @@
 """Build OSC messages for client applications."""
 
 try:
-		import builtins
+	import builtins
 except ImportError:
-		# for python 2.x
-		builtins = __builtins__
+	# for python 2.x
+	builtins = __builtins__
 
 from pythonosc import osc_message
 from pythonosc.parsing import osc_types

@@ -22,38 +22,35 @@ class OscMessage(object):
 		self._parse_datagram()
 
 	def _parse_datagram(self):
-		try:
-			self._address_regexp, index = osc_types.get_string(self._dgram, 0)
-			if not self._dgram[index:]:
-				# No params is legit, just return now.
-				return
+		self._address_regexp, index = osc_types.get_string(self._dgram, 0)
+		if not self._dgram[index:]:
+			# No params is legit, just return now.
+			return
 
-			# Get the parameters types.
-			type_tag, index = osc_types.get_string(self._dgram, index)
-			if type_tag.startswith(','):
-				type_tag = type_tag[1:]
+		# Get the parameters types.
+		type_tag, index = osc_types.get_string(self._dgram, index)
+		if type_tag.startswith(','):
+			type_tag = type_tag[1:]
 
-			# Parse each parameter given its type.
-			for param in type_tag:
-				if param == "i":  # Integer.
-					val, index = osc_types.get_int(self._dgram, index)
-				elif param == "f":  # Float.
-					val, index = osc_types.get_float(self._dgram, index)
-				elif param == "s":  # String.
-					val, index = osc_types.get_string(self._dgram, index)
-				elif param == "b":  # Blob.
-					val, index = osc_types.get_blob(self._dgram, index)
-				elif param == "T": # True.
-					val = True
-				elif param == "F": # False.
-					val = False
-				# TODO: Support more exotic types as described in the specification.
-				else:
-					logging.warning('Unhandled parameter type: {0}'.format(param))
-					continue
-				self._parameters.append(val)
-		except osc_types.ParseError as pe:
-			raise ParseError('Found incorrect datagram, ignoring it', pe)
+		# Parse each parameter given its type.
+		for param in type_tag:
+			if param == "i":  # Integer.
+				val, index = osc_types.get_int(self._dgram, index)
+			elif param == "f":  # Float.
+				val, index = osc_types.get_float(self._dgram, index)
+			elif param == "s":  # String.
+				val, index = osc_types.get_string(self._dgram, index)
+			elif param == "b":  # Blob.
+				val, index = osc_types.get_blob(self._dgram, index)
+			elif param == "T": # True.
+				val = True
+			elif param == "F": # False.
+				val = False
+			# TODO: Support more exotic types as described in the specification.
+			else:
+				logging.warning('Unhandled parameter type: {0}'.format(param))
+				continue
+			self._parameters.append(val)
 
 	@property
 	def address(self):

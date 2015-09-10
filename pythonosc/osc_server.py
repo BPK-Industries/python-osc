@@ -11,7 +11,7 @@ server.serve_forever()
 or run the server on its own thread:
 server = ForkingOSCUDPServer((ip, port), dispatcher)
 server_thread = threading.Thread(target=server.serve_forever)
-server_thread.Start()
+server_thread.start()
 ...
 server.shutdown()
 
@@ -20,12 +20,14 @@ Those servers are using the standard socketserver from the standard library:
 http://docs.python.org/library/socketserver.html
 """
 
+import time
+import logging
 import calendar
+
 try:
 	import socketserver
 except ImportError:
 	import SocketServer as socketserver
-import time
 
 from pythonosc import osc_bundle
 from pythonosc import osc_message
@@ -56,28 +58,33 @@ class _UDPHandler(socketserver.BaseRequestHandler):
 						osc_msg_arg1, osc_msg_arg2, osc_msg_param3, ...)
 	"""
 	def handle(self):
-		data = self.request[0].strip()
+		data = self.request[0]
+
+		ka = {'client': self.client_address[0]}
+
 		# Get OSC messages from all bundles or standalone message.
 		try:
 			packet = osc_packet.OscPacket(data)
 			for timed_msg in packet.messages:
 				now = calendar.timegm(time.gmtime())
-				handlers = self.server.dispatcher.handlers_for_address(
-						timed_msg.message.address)
+
+				handlers = self.server.dispatcher.handlers_for_address(timed_msg.message.address)
 				if not handlers:
 					continue
+
 				# If the message is to be handled later, then so be it.
 				if timed_msg.time > now:
 					time.sleep(timed_msg.time - now)
+
+				ka['address'] = timed_msg.message.address
+				ka['timestamp'] = timed_msg.time
 				for handler in handlers:
 					if handler.args:
-						handler.callback(
-								timed_msg.message.address, handler.args, *timed_msg.message)
+						handler.callback(handler.args, *timed_msg.message, **ka)
 					else:
-						handler.callback(timed_msg.message.address, *timed_msg.message)
-		except osc_packet.ParseError:
-			pass
-
+						handler.callback(*timed_msg.message, **ka)
+		except osc_packet.ParseError as ex:
+			logging.exception(ex)
 
 def _is_valid_request(request):
 	"""Returns true if the request's data looks like an osc bundle or message."""
