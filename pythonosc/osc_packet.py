@@ -26,7 +26,7 @@ def _timed_msg_of_bundle(bundle, now):
 	msgs = []
 	for content in bundle:
 		if type(content) == osc_message.OscMessage:
-			if (bundle.timestamp == osc_types.IMMEDIATELY or bundle.timestamp < now):
+			if (bundle.timestamp == osc_types.IMMEDIATELY):
 				msgs.append(TimedMessage(now, content))
 			else:
 				msgs.append(TimedMessage(bundle.timestamp, content))

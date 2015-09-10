@@ -48,7 +48,7 @@ class OscMessage(object):
 				val = False
 			# TODO: Support more exotic types as described in the specification.
 			else:
-				logging.warning('Unhandled parameter type: {0}'.format(param))
+				logging.getLogger().warning('Unhandled parameter type: {0}'.format(param))
 				continue
 			self._parameters.append(val)
 

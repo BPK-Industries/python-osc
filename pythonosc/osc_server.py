@@ -83,8 +83,8 @@ class _UDPHandler(socketserver.BaseRequestHandler):
 						handler.callback(handler.args, *timed_msg.message, **ka)
 					else:
 						handler.callback(*timed_msg.message, **ka)
-		except osc_packet.ParseError as ex:
-			logging.exception(ex)
+		except Exception as ex:
+			logging.getLogger().exception(ex)
 
 def _is_valid_request(request):
 	"""Returns true if the request's data looks like an osc bundle or message."""

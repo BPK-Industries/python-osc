@@ -60,28 +60,23 @@ def get_string(dgram, start_index):
 		ParseError if the datagram could not be parsed.
 	"""
 	offset = 0
-	try:
-		while dgram[start_index + offset] != 0:
-			offset += 1
-		if offset == 0:
-			raise ParseError(
-					'OSC string cannot begin with a null byte: %s' % dgram[start_index:])
-		# Align to a byte word.
-		if (offset) % _STRING_DGRAM_PAD == 0:
-			offset += _STRING_DGRAM_PAD
-		else:
-			offset += (-offset % _STRING_DGRAM_PAD)
-		# Python slices do not raise an IndexError past the last index,
-		# do it ourselves.
-		if offset > len(dgram[start_index:]):
-			raise ParseError('Datagram is too short')
-		data_str = dgram[start_index:start_index + offset]
-		return data_str.replace(b'\x00', b'').decode('utf-8'), start_index + offset
-	except IndexError as ie:
-		raise ParseError('Could not parse datagram %s' % ie)
-	except TypeError as te:
-		raise ParseError('Could not parse datagram %s' % te)
 
+	while dgram[start_index + offset] != b'\x00':
+		offset += 1
+
+	if offset == 0:
+		raise ParseError('OSC string cannot begin with a null byte: %s' % dgram[start_index:])
+	# Align to a byte word.
+	if (offset) % _STRING_DGRAM_PAD == 0:
+		offset += _STRING_DGRAM_PAD
+	else:
+		offset += (-offset % _STRING_DGRAM_PAD)
+	# Python slices do not raise an IndexError past the last index,
+	# do it ourselves.
+	if offset > len(dgram[start_index:]):
+		raise ParseError('Datagram is too short')
+	data_str = dgram[start_index:start_index + offset]
+	return data_str.replace(b'\x00', b'').decode('utf-8'), start_index + offset
 
 def write_int(val):
 	"""Returns the datagram for the given integer parameter value
